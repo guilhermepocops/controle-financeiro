@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Controle Financeiro</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Rubik:wght@500;700&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="style.css" />
+  <script src="app.js"></script>
+</head>
+<body>
+  <div id="scrollOverlay" class="scroll-overlay"></div>
+  <div id="cardExpandOverlay" class="card-expand-overlay" onclick="fecharCardExpandido()"></div>
+
+  <div class="container">
+    <h1>Controle Financeiro</h1>
+
+    <div class="mes-ref">
+      <span>Mês de referência do orçamento:</span>
+      <input id="mesReferencia" class="mes-ref-input" value="" />
+    </div>
+
+    <div class="small">
+      Edite salários, contas, compras e rendas extras e clique em <strong>Recalcular tudo</strong>.
+    </div>
+
+    <div class="toolbar">
+      <button class="btn-main" onclick="recalcularTudo()">Recalcular tudo</button>
+      <button class="btn-ghost" onclick="resetarPadrao()">Voltar valores padrão</button>
+      <button class="btn-ghost" onclick="limparMovimentos()">Limpar compras e rendas extras</button>
+      <button class="btn-main" onclick="exportarResumo()">Exportar Resumo</button>
+      <div style="display:flex; align-items:center; gap:8px;">
+  <button class="btn-ghost" onclick="salvarNaPlanilha()">Sincronizar com planilha</button>
+  <span id="lastSync" class="last-sync-text">Última atualização: nunca</span>
+</div>
+
+    </div>
+
+    <!-- agora com 3 abas -->
+    <div class="tabs-bar">
+      <button class="tab-btn active" data-tab="resumo" onclick="mudarAba('resumo')">Resumo</button>
+      <button class="tab-btn" data-tab="movimentos" onclick="mudarAba('movimentos')">Compras &amp; Rendas</button>
+      <button class="tab-btn" data-tab="fluxo" onclick="mudarAba('fluxo')">Fluxo de Caixa</button>
+    </div>
+
+    <!-- RESUMO -->
+    <div id="tab-resumo" class="tab-panel active">
+      <div class="grid-main">
+        <div>
+          <div class="grid">
+
+            <!-- CARD VISÃO GERAL DO MÊS (não clicável) -->
+            <div id="cardVisao" class="card card-emphasis">
+              <div class="badge">Visão geral do mês</div>
+
+              <div class="kpi-label">Renda total (salários + rendas extras)</div>
+              <div id="kpiRenda" class="kpi-value kpi-neutral">R$ 0,00</div>
+
+              <div class="kpi-label" style="margin-top:8px;">Gastos fixos + cartão + compras</div>
+              <div id="kpiFixos" class="kpi-value kpi-neg">R$ 0,00</div>
+
+              <div class="kpi-label" style="margin-top:8px;">Saldo potencial do mês</div>
+              <div id="kpiSaldo" class="kpi-value kpi-pos">R$ 0,00</div>
+
+              <div class="totais-mini">
+                Rendas extras: <span id="miniExtras">R$ 0,00</span> · Compras:
+                <span id="miniCompras">R$ 0,00</span>
+              </div>
+
+              <div class="chart-wrapper">
+                <canvas id="resumoChart" width="190" height="190"></canvas>
+              </div>
+            </div>
+
+            <!-- CARD CONFIGURAÇÕES DE RENDA (não clicável) -->
+            <div id="cardRenda" class="card card-emphasis">
+              <div class="badge">Configurações de renda</div>
+              <div class="row">
+                <div>
+                  <label>Salário do Guilherme - dia 5</label>
+                  <input id="sal5" type="number" step="0.01" value="2257.60" />
+                </div>
+                <div>
+                  <label>Salário do Guilherme - dia 20</label>
+                  <input id="sal20" type="number" step="0.01" value="964.77" />
+                </div>
+              </div>
+              <div class="row" style="margin-top:6px;">
+                <div>
+                  <label>Salário Cindy - dia 15</label>
+                  <input id="sal15" type="number" step="0.01" value="1132.00" />
+                </div>
+                <div>
+                  <label>Salário Cindy - dia 30</label>
+                  <input id="sal30" type="number" step="0.01" value="1300.00" />
+                </div>
+              </div>
+            </div>
+
+            <!-- CARD CONFIGURAÇÕES DE CONTAS FIXAS -->
+            <div class="card">
+              <div class="badge">Configurações de contas fixas</div>
+              <div class="row">
+                <div>
+                  <label>Aluguel</label>
+                  <input id="aluguel" type="number" step="0.01" value="600" />
+                </div>
+                <div>
+                  <label>Internet</label>
+                  <input id="internet" type="number" step="0.01" value="90" />
+                </div>
+              </div>
+              <div class="row" style="margin-top:6px;">
+                <div>
+                  <label>Vivo</label>
+                  <input id="vivo" type="number" step="0.01" value="50" />
+                </div>
+                <div>
+                  <label>Água</label>
+                  <input id="agua" type="number" step="0.01" value="80" />
+                </div>
+              </div>
+              <div class="row" style="margin-top:6px;">
+                <div>
+                  <label>Luz (valor do mês)</label>
+                  <input id="luz" type="number" step="0.01" value="57" />
+                </div>
+                <div>
+                  <label>Cartão de crédito (mês)</label>
+                  <input id="cartao" type="number" step="0.01" value="912.12" />
+                </div>
+              </div>
+              <div class="row" style="margin-top:6px;">
+                <div>
+                  <label>Parcela do carro</label>
+                  <input id="carro" type="number" step="0.01" value="840" />
+                </div>
+                <div>
+                  <label>Seguro da moto</label>
+                  <input id="seguro" type="number" step="0.01" value="103" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div></div>
+      </div>
+    </div>
+
+    <!-- MOVIMENTOS -->
+    <div id="tab-movimentos" class="tab-panel">
+      <div class="grid">
+        <div class="card">
+          <div class="badge">Rendas extras</div>
+          <div class="row">
+            <div>
+              <label>Descrição</label>
+              <input id="extraDesc" type="text" placeholder="Freela, venda, pix, etc." />
+            </div>
+            <div>
+              <label>Valor (R$)</label>
+              <input id="extraValor" type="number" step="0.01" />
+            </div>
+          </div>
+          <div style="margin-top:8px; display:flex; justify-content:flex-end;">
+            <button class="btn-main" onclick="adicionarExtra()">Adicionar renda extra</button>
+          </div>
+          <div class="totais-mini">
+            Total de rendas extras: <span id="totalExtras">R$ 0,00</span>
+          </div>
+          <div id="listaExtras" class="list"></div>
+        </div>
+
+        <div class="card">
+          <div class="badge">Compras e gastos do dia a dia</div>
+
+          <div class="row" style="margin-bottom:6px;">
+            <div>
+              <label>Filtrar por descrição</label>
+              <input
+                id="filtroCompraTexto"
+                type="text"
+                placeholder="Buscar (ex.: mercado, gasolina)"
+                oninput="renderCompras()"
+              />
+            </div>
+          </div>
+          <div class="row" style="margin-bottom:6px;">
+            <div>
+              <label>Filtrar por categoria</label>
+              <select id="filtroCompraCategoria" onchange="renderCompras()">
+                <option value="">Todas</option>
+                <option value="Mercado">Mercado</option>
+                <option value="Transporte">Transporte</option>
+                <option value="Lazer">Lazer</option>
+                <option value="Saúde">Saúde</option>
+                <option value="Outros">Outros</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label>Descrição</label>
+              <input id="compraDesc" type="text" placeholder="Mercado, gasolina, lanche..." />
+            </div>
+          </div>
+          <div class="row" style="margin-top:6px;">
+            <div>
+              <label>Categoria</label>
+              <select id="compraCategoria">
+                <option value="Mercado">Mercado</option>
+                <option value="Transporte">Transporte</option>
+                <option value="Lazer">Lazer</option>
+                <option value="Saúde">Saúde</option>
+                <option value="Outros">Outros</option>
+              </select>
+            </div>
+            <div>
+              <label>Valor (R$)</label>
+              <input id="compraValor" type="number" step="0.01" />
+            </div>
+          </div>
+          <div style="margin-top:8px; display:flex; justify-content:flex-end;">
+            <button class="btn-main" onclick="adicionarCompra()">Adicionar compra</button>
+          </div>
+          <div class="totais-mini">
+            Total de compras (mês): <span id="totalCompras">R$ 0,00</span><br />
+            Total exibido no filtro: <span id="totalComprasFiltrado">R$ 0,00</span>
+          </div>
+          <div id="listaCompras" class="list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FLUXO DE CAIXA (nova aba) -->
+    <div id="tab-fluxo" class="tab-panel">
+      <h2>Fluxo de Caixa - Acompanhamento por Data</h2>
+      <div class="card">
+        <div id="fluxoDia5" class="fluxo-dia"></div>
+        <div id="fluxoDia15" class="fluxo-dia"></div>
+        <div id="fluxoDia20" class="fluxo-dia"></div>
+        <div id="fluxoDia30" class="fluxo-dia"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="quickPanel" class="quick-panel">
+    <div class="quick-header">
+      <div class="quick-title">Lançamento rápido</div>
+      <button class="quick-close" onclick="fecharLancamentoRapido()">×</button>
+    </div>
+    <div class="quick-row">
+      <div>
+        <label>Tipo</label>
+        <select id="qTipo" onchange="atualizarQuickTipo()">
+          <option value="compra">Compra</option>
+          <option value="extra">Renda extra</option>
+        </select>
+      </div>
+      <div id="qCategoriaWrap">
+        <label>Categoria</label>
+        <select id="qCategoria">
+          <option value="Mercado">Mercado</option>
+          <option value="Transporte">Transporte</option>
+          <option value="Lazer">Lazer</option>
+          <option value="Saúde">Saúde</option>
+          <option value="Outros">Outros</option>
+        </select>
+      </div>
+    </div>
+    <div class="quick-row">
+      <div>
+        <label>Descrição</label>
+        <input id="qDesc" type="text" placeholder="Ex.: Mercado, pix extra..." />
+      </div>
+    </div>
+    <div class="quick-row">
+      <div>
+        <label>Valor (R$)</label>
+        <input id="qValor" type="number" step="0.01" />
+      </div>
+    </div>
+    <div class="quick-actions">
+      <button class="btn-ghost" onclick="fecharLancamentoRapido()">Cancelar</button>
+      <button class="btn-main" onclick="salvarLancamentoRapido()">Salvar</button>
+    </div>
+  </div>
+
+  <button class="fab" onclick="toggleLancamentoRapido()">
+    <span>+</span>
+  </button>
+</body>
+</html>
