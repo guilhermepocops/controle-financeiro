@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	
+    <title>Gerador de Resumo de Visita</title>
+	
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+        }
+        label {
+            font-weight: bold;
+            margin-top: 15px;
+            display: block;
+            color: #333;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+        textarea {
+            height: 120px;
+        }
+        button {
+            padding: 12px;
+            width: 100%;
+            border: none;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-top: 15px;
+        }
+		#mostrarUltimoResumo { background-color: #28a745;  color: white; }
+        #copiar { background-color: #007bff; }
+        #limpar { background-color: #dc3545; }
+        #gerarResumo { background-color: #28a745; }
+        #reiniciar { background-color: #ffc107; }
+        #adicionar, #subtrair {
+            background-color: #17a2b8;
+            width: 48%;
+            display: inline-block;
+            margin-top: 10px;
+        }
+        
+        #subtrair {
+            background-color: #dc3545;
+        }
+        .campo-mesh, .campo-roku {
+            display: none;
+            margin-top: 10px;
+        }
+        .resultado {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f1f1f1;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .resumo-info {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        .btn-container {
+            text-align: center;
+        }
+        .h3-titulo {
+            font-size: 18px;
+            margin-top: 30px;
+            color: #333;
+			
+        }
+		.botao {
+  display: inline-block;
+  background-color: #007bff; /* Azul */
+  color: white;
+  padding: 5px 20px;
+  border-radius: 5px;
+  text-decoration: none;
+  font-weight: bold;
+  margin-top: 10px;
+}
+
+.botao:hover {
+  background-color: #0056b3; /* Azul mais escuro ao passar o mouse */
+}
+textarea {
+    white-space: pre-wrap;
+}
+
+
+    </style>
+</head>
+<body>
+    <h2>Gerador de Resumo de Visita</h2>
+    <label for="contrato">Contrato:</label>
+    <input type="text" id="contrato">
+
+    <label for="acompanhou">Quem acompanhou a visita?</label>
+    <input type="text" id="acompanhou">
+
+    <label for="onu_instalada">ONU instalada:</label>
+    <input type="text" id="onu_instalada">
+
+    <label for="constatado">Ao chegar no local foi constatado:</label>
+    <select id="constatado" onchange="verificarConstatado()">
+        <option>ATENUADO</option>
+        <option>DESCONFIGURADO</option>
+        <option>DEFEITO</option>
+        <option>ONU BGN</option>
+        <option>ONU AC</option>
+        <option>ONU incompatível com plano do cliente</option>
+        <option>OK</option>
+        <option>Cliente contratou ROKU+MESH</option>
+        <option>Cliente contratou MESH</option>
+        <option>Cliente contratou ROKU</option>
+    </select>
+
+    <div id="meshFields" class="campo-mesh">
+        <label for="quantosMesh">Quantos MESH?</label>
+        <select id="quantosMesh" onchange="mostrarCamposMesh()">
+            <option value="0">Selecione</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+        </select>
+        <div id="meshMACFields"></div>
+    </div>
+
+    <div id="rokuFields" class="campo-roku">
+        <label for="rokuSN">Serial Number do ROKU:</label>
+        <input type="text" id="rokuSN">
+    </div>
+
+    <label for="tratativa">Tratativa:</label>
+    <select id="tratativa">
+        <option>Feita a instalação de rede mesh</option>
+        <option>Configurações de ONU</option>
+        <option>Substituição de equipamento</option>
+        <option>Feita a validação </option>
+        <option>Feita a instalação de ROKU</option>
+    </select>
+
+    <label for="materiais">Materiais utilizados:</label>
+    <select id="materiais">
+        <option>1 conector APC</option>
+        <option>1 conector UPC</option>
+        <option>Nenhum material foi utilizado</option>
+    </select>
+
+    <label for="troca_onu">Houve troca de ONU?</label>
+    <select id="troca_onu" onchange="mostrarCamposMAC()">
+        <option value="Não">Não</option>
+        <option value="Sim">Sim</option>
+    </select>
+
+    <div id="macFields" style="display: none;">
+        <label for="mac_retirada">MAC da ONU retirada:</label>
+        <input type="text" id="mac_retirada">
+
+        <label for="mac_nova">MAC da nova ONU:</label>
+        <input type="text" id="mac_nova">
+		<div id="supervisorField" style="display: none;">
+        <label for="supervisor">Autorizado pelo supervisor:</label>
+        <input type="text" id="supervisor">
+    </div>
+    </div>
+
+    <label for="conclusao">Conclusão:</label>
+    <select id="conclusao" onchange="verificarConclusao()">
+        <option>Medições nos parâmetros, ONU operando normalmente</option>
+        <option>Feita a validação com o NOC, e o mesmo enviou o chamado para equipe de sistemas</option>
+		<option>Sem sucesso nas configurações de equipamento, feita a substituição</option>
+		<option>Cliente foi informado pelo call center que trocariamos o aparelho por ser antigo "2.4g". Feita a substituição</option>
+		<option>ONU com baixa performance e pouca amplitude, feita a troca.</option>
+		<option>O aparelho foi trocado preventivamente, pois apresentava sinais de falha iminente, garantindo que o cliente não fosse impactado por possíveis problemas no futuro.</option>
+		<option>Mesmo após as configurações, cliente ainda solicita aparelho 5GHZ por conta da baixa velocidade no 2.4Ghz, feita a troca.</option>
+		<option>A troca foi realizada para atender à solicitação do cliente e garantir a satisfação com o serviço prestado.</option>
+		<option>O cliente relatou dificuldades no uso do aparelho antigo, o que levou à solicitação de uma troca para melhorar a funcionalidade do serviço.</option>
+		<option>A troca foi solicitada para garantir a compatibilidade do equipamento com tecnologias mais recentes e atender às necessidades do cliente.</option>
+		<option>O cliente manifestou uma preferência pessoal por um modelo mais recente, o que levou à solicitação da troca para atender às suas preferências.</option>
+    </select>
+
+    <div id="conclusaoManual" style="display: none;">
+        <label for="conclusaoManualInput">Detalhes do que foi feito:</label>
+        <textarea id="conclusaoManualInput"></textarea>
+    </div>
+
+    <button id="gerarResumo" onclick="gerarResumo()">GERAR RESUMO</button>
+    <button id="limpar" onclick="limparCampos()">LIMPAR</button>
+    <button id="copiar" onclick="copiarResumo()">COPIAR RESUMO</button>
+
+    <div class="resultado">
+        <textarea id="resumo" readonly></textarea>
+    </div>
+
+    <h3 class="h3-titulo">Contador de Resumos</h3>
+    <p>Resumos gerados: <span id="contadorResumos">0</span></p>
+    <p>Última geração: <span id="ultimaHora">Nunca</span></p>
+
+    <div class="btn-container">
+        <button id="adicionar" onclick="alterarContador(1)">Adicionar 1</button>
+        <button id="subtrair" onclick="alterarContador(-1)">Subtrair 1</button>
+        <button id="reiniciar" onclick="reiniciarContador()">Reiniciar Contador</button>
+    </div>
+
+    <h3 class="h3-titulo">Último Resumo Gerado</h3>
+    <button id="mostrarUltimoResumo" onclick="mostrarUltimoResumo()">MOSTRAR ÚLTIMO RESUMO</button>
+	
+	<a href="index.html" class="botao">Voltar</a>
+
+    <script>
+         let contadorResumos = localStorage.getItem("contadorResumos") ? parseInt(localStorage.getItem("contadorResumos")) : 0;
+        let ultimoResumo = localStorage.getItem("ultimoResumo") || "";
+        let ultimaHoraGeracao = localStorage.getItem("ultimaHoraGeracao") || "Nunca";
+
+        // Atualizar visualização do contador de resumos e última geração ao carregar a página
+        document.getElementById("contadorResumos").textContent = contadorResumos;
+        document.getElementById("ultimaHora").textContent = ultimaHoraGeracao;
+
+        function preencherCamposPadrao() {
+            document.getElementById("constatado").value = "DESCONFIGURADO";
+            document.getElementById("tratativa").value = "Configurações de ONU";
+            document.getElementById("materiais").value = "Nenhum material foi utilizado";
+            document.getElementById("troca_onu").value = "Não";
+            document.getElementById("conclusao").value = "Medições nos parâmetros, ONU operando normalmente";
+            document.getElementById("macFields").style.display = "none";
+            document.getElementById("conclusaoManual").style.display = "none";
+            document.getElementById("meshFields").style.display = "none";
+            document.getElementById("rokuFields").style.display = "none";  // Ocultar o campo do ROKU por padrão
+        }
+ function mostrarCamposMAC() {
+    let trocaOnu = document.getElementById("troca_onu").value;
+    let macFields = document.getElementById("macFields");
+	let supervisorField = document.getElementById("supervisorField"); 
+
+    console.log("Troca de ONU selecionada: " + trocaOnu);  // Adicionado para depuração
+
+   if (trocaOnu === "Sim") {
+        macFields.style.display = "block";
+        supervisorField.style.display = "block";
+    } else {
+        macFields.style.display = "none";
+        supervisorField.style.display = "none";
+    }
+}
+
+        function verificarConstatado() {
+            let constatado = document.getElementById("constatado").value;
+            let trocaOnu = document.getElementById("troca_onu");
+            let macRetirada = document.getElementById("mac_retirada");
+            let macFields = document.getElementById("macFields");
+			let supervisorField = document.getElementById("supervisorField");
+            let materiais = document.getElementById("materiais");
+
+            // Exibir campo de conclusão manual se "OK" for selecionado
+            if (constatado === "OK") {
+                document.getElementById("conclusaoManual").style.display = "block";
+            } else {
+                document.getElementById("conclusaoManual").style.display = "none";
+            }
+
+            // Verificar se a opção ROKU foi selecionada
+            if (constatado === "Cliente contratou ROKU" || constatado === "Cliente contratou ROKU+MESH") {
+                document.getElementById("rokuFields").style.display = "block";  // Exibir o campo do ROKU
+            } else {
+                document.getElementById("rokuFields").style.display = "none";  // Ocultar se não for ROKU
+            }
+
+            // Verificar se MESH foi selecionado
+            if (constatado === "Cliente contratou ROKU+MESH" || constatado === "Cliente contratou MESH") {
+                document.getElementById("meshFields").style.display = "block";
+                trocaOnu.value = "Não";
+            } else {
+                document.getElementById("meshFields").style.display = "none";
+                trocaOnu.value = "Não";
+            }
+
+            // Verificar a troca de ONU
+            if (["DEFEITO", "ONU BGN", "ONU AC", "ONU incompatível com plano do cliente"].includes(constatado)) {
+                trocaOnu.value = "Sim";
+                macRetirada.value = document.getElementById("onu_instalada").value;
+				supervisorField.style.display = "block";
+                macFields.style.display = "block";
+                materiais.value = "nenhum";
+            }
+			else {
+        supervisorField.style.display = "none"; // <- Para ocultar quando não for necessário
+    }
+        }
+        function mostrarCamposMesh() {
+    let quantidadeMesh = document.getElementById("quantosMesh").value;  // Captura a quantidade de MESH selecionada
+    let meshMACFields = document.getElementById("meshMACFields");
+
+    meshMACFields.innerHTML = "";  // Limpa os campos de MESH antes de gerar os novos campos
+
+    if (quantidadeMesh > 0) {
+        // Gerar campos para MESH
+        for (let i = 1; i <= quantidadeMesh; i++) {
+            let input = document.createElement("input");
+            input.type = "text";
+            input.id = "mesh" + i;
+            input.placeholder = "MESH " + i + " que está ficando no cliente";
+            meshMACFields.appendChild(input);
+            meshMACFields.appendChild(document.createElement("br"));
+        }
+    }
+}
+
+        function gerarResumo() {
+            let contrato = document.getElementById("contrato").value;
+            let acompanhou = document.getElementById("acompanhou").value;
+            let onu_instalada = document.getElementById("onu_instalada").value;
+            let constatado = document.getElementById("constatado").value;
+            let tratativa = document.getElementById("tratativa").value;
+            let materiais = document.getElementById("materiais").value;
+            let troca_onu = document.getElementById("troca_onu").value;
+			let supervisor = document.getElementById("supervisor").value;
+            let mac_retirada = document.getElementById("mac_retirada").value;
+            let mac_nova = document.getElementById("mac_nova").value;
+            let conclusao = document.getElementById("conclusao").value;
+            let rokuSN = document.getElementById("rokuSN").value;
+            let conclusaoManualInput = document.getElementById("conclusaoManualInput").value; // Capturar texto manual de conclusão
+            let resumo = "*RESUMO DE VISITA DE QUALIDADE*\n\n*CTT:* " + contrato + "\n\n*Quem acompanhou visita?* " + acompanhou + "\n\n*ONU instalada:* " + onu_instalada + "\n\n*Ao chegar no local foi constatado:* " + constatado + "\n\n*Tratativa:* " + tratativa + "\n\n*Materiais utilizados:* " + materiais + "\n\n*Houve troca de ONU?* " + (troca_onu === "Sim" ? "✅ Sim" : "❌ Não");
+
+            if (troca_onu === "Sim") {
+		resumo += "\n*Autorizado pelo supervisor:* " + supervisor + "";    
+                resumo += "\n*ONU retirada:* " + mac_retirada + "";
+                resumo += "\n*ONU que está ficando no cliente:* " + mac_nova + "";
+               
+            }
+
+            if (constatado === "Cliente contratou ROKU" || constatado === "Cliente contratou ROKU+MESH") {
+                resumo += "\nROKU que está ficando no cliente: " + rokuSN;
+            }
+
+            for (let i = 1; i <= 4; i++) {
+                let mesh = document.getElementById("mesh" + i);
+                if (mesh) {
+                    resumo += "\nMESH" + i + " que está ficando no cliente: " + mesh.value;
+                }
+            }
+
+            // Verificar se foi preenchido o campo manual de conclusão
+            if (constatado === "OK" && conclusaoManualInput) {
+                resumo += "\n\n*Detalhes do que foi feito:*\n" + conclusaoManualInput;
+            }
+
+            resumo += "\n\n*Conclusão:* " + conclusao + "\n";
+            document.getElementById("resumo").value = resumo;
+
+            // Atualiza contagem de resumos
+            contadorResumos++;
+            ultimaHoraGeracao = new Date().toLocaleString();
+            document.getElementById("contadorResumos").textContent = contadorResumos;
+            document.getElementById("ultimaHora").textContent = ultimaHoraGeracao;
+            ultimoResumo = resumo;
+
+            // Salva no localStorage
+            localStorage.setItem("contadorResumos", contadorResumos);
+            localStorage.setItem("ultimoResumo", ultimoResumo);
+            localStorage.setItem("ultimaHoraGeracao", ultimaHoraGeracao);
+        }
+
+        function limparCampos() {
+            document.getElementById("resumo").value = "";
+            preencherCamposPadrao();
+            // Não reinicia o contador aqui
+        }
+
+        function copiarResumo() {
+            let resumo = document.getElementById("resumo");
+            resumo.select();
+            document.execCommand("copy");
+        }
+
+        function mostrarUltimoResumo() {
+            if (ultimoResumo !== "") {
+                document.getElementById("resumo").value = ultimoResumo;
+            } else {
+                alert("Nenhum resumo foi gerado ainda!");
+            }
+        }
+
+        // Função para alterar contador de resumos
+        function alterarContador(valor) {
+            contadorResumos += valor;
+            document.getElementById("contadorResumos").textContent = contadorResumos;
+            // Atualiza no localStorage
+            localStorage.setItem("contadorResumos", contadorResumos);
+        }
+
+        // Função para reiniciar contador de resumos
+        function reiniciarContador() {
+            contadorResumos = 0;
+            document.getElementById("contadorResumos").textContent = contadorResumos;
+            // Atualiza no localStorage
+            localStorage.setItem("contadorResumos", contadorResumos);
+        }
+
+        // Inicializa os campos com valores padrão
+        preencherCamposPadrao();
+    </script>
+</body>
+</html>
