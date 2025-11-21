@@ -2,7 +2,7 @@ let extras = [];
 let compras = [];
 
 /* COLE AQUI SUA URL DO WEB APP DO APPS SCRIPT */
-const WEBAPP_URL = "https://controle-financeiro-gamma-beryl.vercel.app/api/sheets-proxy";
+const WEBAPP_URL = "https://projeto-controle-financeiro-b1ir.vercel.app/";
 
 function lerNumero(id) {
   const el = document.getElementById(id);
@@ -40,7 +40,7 @@ function montarEstado() {
       vivo: document.getElementById("vivo")?.value || "",
       agua: document.getElementById("agua")?.value || "",
       luz: document.getElementById("luz")?.value || "",
-      cartao: document.getElementById("cartao")?.value || "",
+      // cartao removido das contas fixas
       carro: document.getElementById("carro")?.value || "",
       seguro: document.getElementById("seguro")?.value || ""
     },
@@ -114,7 +114,7 @@ async function carregarDaPlanilha() {
       if (document.getElementById("vivo"))     document.getElementById("vivo").value     = estado.contas.vivo     ?? "";
       if (document.getElementById("agua"))     document.getElementById("agua").value     = estado.contas.agua     ?? "";
       if (document.getElementById("luz"))      document.getElementById("luz").value      = estado.contas.luz      ?? "";
-      if (document.getElementById("cartao"))   document.getElementById("cartao").value   = estado.contas.cartao   ?? "";
+      // cartao não é mais carregado como conta fixa
       if (document.getElementById("carro"))    document.getElementById("carro").value    = estado.contas.carro    ?? "";
       if (document.getElementById("seguro"))   document.getElementById("seguro").value   = estado.contas.seguro   ?? "";
     }
@@ -122,11 +122,15 @@ async function carregarDaPlanilha() {
     extras = Array.isArray(estado.extras) ? estado.extras : [];
     compras = Array.isArray(estado.compras) ? estado.compras : [];
 
+    // garante forma padrão se vier de estados antigos
+    compras.forEach(c => {
+      if (!c.forma) c.forma = "debito";
+    });
+
     renderExtras();
     renderCompras();
     recalcularTudo();
 
-    // OPCIONAL: SE QUISER MOSTRAR QUE CARREGOU DA PLANILHA AO ABRIR
     const span = document.getElementById("lastSync");
     if (span) {
       const agora = new Date();
@@ -231,28 +235,103 @@ function recalcularTudo() {
   const vivo = lerNumero("vivo");
   const agua = lerNumero("agua");
   const luz = lerNumero("luz");
-  const cartao = lerNumero("cartao");
+  // cartao removido das contas fixas
   const carro = lerNumero("carro");
   const seguro = lerNumero("seguro");
 
+  // separa compras débito x crédito
+  const comprasDebito = compras.filter(c => !c.forma || c.forma === "debito");
+  const comprasCredito = compras.filter(c => c.forma === "credito");
+
   const extrasTotal = totalExtras();
-  const comprasTotal = totalCompras();
+  const comprasDebitoTotal = comprasDebito.reduce((s, c) => s + c.valor, 0);
+  const comprasCreditoTotal = comprasCredito.reduce((s, c) => s + c.valor, 0);
+  const comprasTotal = comprasDebitoTotal + comprasCreditoTotal;
 
   const rendaTotal = sal5 + sal15 + sal20 + sal30 + extrasTotal;
-  const gastosFixos = aluguel + internet + vivo + agua + luz + cartao + carro + seguro;
+  const gastosFixos = aluguel + internet + vivo + agua + luz + carro + seguro;
   const gastosGerais = gastosFixos + comprasTotal;
   const saldoPotencial = rendaTotal - gastosGerais;
 
   document.getElementById("kpiRenda").textContent = moeda(rendaTotal);
+  // aqui continua mostrando “gastos fixos + cartão + compras”, mas cartão agora é comprasCreditoTotal
   document.getElementById("kpiFixos").textContent = moeda(gastosGerais);
   document.getElementById("kpiSaldo").textContent = moeda(saldoPotencial);
   document.getElementById("miniExtras").textContent = moeda(extrasTotal);
   document.getElementById("miniCompras").textContent = moeda(comprasTotal);
+  // novo card de fatura
+const kpiFatura = document.getElementById("kpiFatura");
+if (kpiFatura) kpiFatura.textContent = moeda(comprasCreditoTotal);
+
+// --- fatura: dias até o vencimento (dia 11) ---
+const hoje = new Date();
+const ano = hoje.getFullYear();
+const mes = hoje.getMonth(); // 0-11
+
+// vencimento deste mês (dia 11)
+let vencimento = new Date(ano, mes, 11);
+
+// se hoje já passou do dia 11, considera vencimento no próximo mês
+if (hoje > vencimento) {
+  vencimento = new Date(ano, mes + 1, 11);
+}
+
+const diffMs = vencimento - hoje;
+const diasRestantes = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+const countdownEl = document.getElementById("kpiFaturaCountdown");
+const statusEl = document.getElementById("labelFaturaStatus");
+
+if (countdownEl) {
+  // limpa classes de cor, se você usa kpi-pos / kpi-neutral / kpi-neg
+  countdownEl.classList.remove("kpi-pos", "kpi-neutral", "kpi-neg");
+
+  if (comprasCreditoTotal <= 0) {
+    countdownEl.textContent = "Sem fatura este mês";
+    countdownEl.classList.add("kpi-neutral");
+  } else if (diasRestantes === 0) {
+    countdownEl.textContent = "Vence hoje";
+    countdownEl.classList.add("kpi-neg");
+  } else if (diasRestantes < 0) {
+    countdownEl.textContent = "Vencida há " + Math.abs(diasRestantes) + " dia(s)";
+    countdownEl.classList.add("kpi-neg");
+  } else {
+    countdownEl.textContent = diasRestantes + " dia(s) para vencer";
+    // se faltam 3 dias ou menos, deixa vermelho; senão neutro
+    if (diasRestantes <= 3) {
+      countdownEl.classList.add("kpi-neg");
+    } else {
+      countdownEl.classList.add("kpi-neutral");
+    }
+  }
+}
+
+if (statusEl) {
+  let txt = "";
+  if (comprasCreditoTotal <= 0) {
+    txt = "sem fatura aberta";
+  } else if (diasRestantes <= 3) {
+    txt = "atenção: perto do vencimento";
+  } else {
+    txt = "ok";
+  }
+  statusEl.textContent = txt;
+}
+
+
+const miniComprasDebito = document.getElementById("miniComprasDebito");
+if (miniComprasDebito) miniComprasDebito.textContent = moeda(comprasDebitoTotal);
+
+  // se você criar spans específicos pode usar:
+  const spanFatura = document.getElementById("miniFaturaCartao");
+  if (spanFatura) spanFatura.textContent = moeda(comprasCreditoTotal);
 
   desenharGrafico({ gastos: gastosGerais, saldo: Math.max(saldoPotencial, 0) });
 
-  const gastosDia5 = aluguel + internet + vivo + agua + luz + cartao;
-  const sobraDia5 = sal5 - gastosDia5;
+  // fatura é tudo que foi comprado no crédito no mês
+const gastosDia5 = aluguel + internet + vivo + agua + luz + comprasCreditoTotal;
+const sobraDia5 = sal5 - gastosDia5;
+
 
   const gastosDia15 = 0;
   const sobraDia15 = sal15 - gastosDia15;
@@ -269,11 +348,12 @@ function recalcularTudo() {
       <div class="kpi-neutral">${moeda(sal5)}</div>
     </div>
     <div class="fluxo-sub">Renda do titular</div>
-    <div class="fluxo-sub">
-      Gastos: Aluguel (${moeda(aluguel)}), Luz (${moeda(luz)}),
-      Água (${moeda(agua)}), Internet (${moeda(internet)}),
-      Vivo (${moeda(vivo)}), Cartão (${moeda(cartao)})
-    </div>
+      <div class="fluxo-sub">
+    Gastos: Aluguel (${moeda(aluguel)}), Luz (${moeda(luz)}),
+    Água (${moeda(agua)}), Internet (${moeda(internet)}),
+    Vivo (${moeda(vivo)}), Fatura cartão (${moeda(comprasCreditoTotal)})
+  </div>
+
     <div class="fluxo-valores">
       <span class="plus">+ ${moeda(sal5)}</span>
       &nbsp; | &nbsp;
@@ -341,7 +421,7 @@ function resetarPadrao() {
   document.getElementById("vivo").value = "50";
   document.getElementById("agua").value = "80";
   document.getElementById("luz").value = "57";
-  document.getElementById("cartao").value = "912.12";
+  // cartao removido
   document.getElementById("carro").value = "840";
   document.getElementById("seguro").value = "103";
   recalcularTudo();
@@ -413,11 +493,13 @@ function renderCompras() {
 
     const div = document.createElement("div");
     div.className = "list-item";
+    const formaLabel = c.forma === "credito" ? "crédito" : "débito";
     div.innerHTML = `
       <div>
         <div>${c.desc || "Compra"} <span class="small">(${c.data})</span></div>
         <div class="small">
           <span class="pill">${c.categoria}</span>
+          &nbsp; <span class="pill">${formaLabel}</span>
           &nbsp; <span class="valor-compra">- ${moeda(c.valor)}</span>
         </div>
       </div>
@@ -440,7 +522,11 @@ function adicionarCompra() {
   if (!val || val <= 0) return;
   const hoje = new Date();
   const data = hoje.toLocaleDateString("pt-BR");
-  compras.push({ desc, categoria: cat, valor: val, data });
+
+  const formaEl = document.getElementById("compraForma");
+  const forma = formaEl ? formaEl.value : "debito";
+
+  compras.push({ desc, categoria: cat, valor: val, data, forma });
   document.getElementById("compraDesc").value = "";
   document.getElementById("compraValor").value = "";
   renderCompras();
@@ -477,24 +563,29 @@ function exportarResumo() {
   const vivo = lerNumero("vivo");
   const agua = lerNumero("agua");
   const luz = lerNumero("luz");
-  const cartao = lerNumero("cartao");
+  // cartao removido
   const carro = lerNumero("carro");
   const seguro = lerNumero("seguro");
 
   const extrasTotal = totalExtras();
-  const comprasTotal = totalCompras();
+
+  const comprasDebito = compras.filter(c => !c.forma || c.forma === "debito");
+  const comprasCredito = compras.filter(c => c.forma === "credito");
+  const comprasDebitoTotal = comprasDebito.reduce((s, c) => s + c.valor, 0);
+  const comprasCreditoTotal = comprasCredito.reduce((s, c) => s + c.valor, 0);
+  const comprasTotal = comprasDebitoTotal + comprasCreditoTotal;
 
   const rendaTotal = sal5 + sal15 + sal20 + sal30 + extrasTotal;
-  const gastosFixos = aluguel + internet + vivo + agua + luz + cartao + carro + seguro;
+  const gastosFixos = aluguel + internet + vivo + agua + luz + carro + seguro;
   const gastosGerais = gastosFixos + comprasTotal;
 
   const categorias = [
     { nome: "Moradia", total: aluguel },
     { nome: "Contas Mensais", total: internet + vivo + agua + luz },
     { nome: "Transporte", total: carro },
-    { nome: "Cartão de Crédito", total: cartao },
+    { nome: "Cartão de Crédito (compras no crédito)", total: comprasCreditoTotal },
     { nome: "Seguros", total: seguro },
-    { nome: "Compras & Outros", total: comprasTotal }
+    { nome: "Compras & Outros (débito/dinheiro)", total: comprasDebitoTotal }
   ];
 
   let texto = "Descrição,Valor\n";
@@ -555,6 +646,9 @@ function salvarLancamentoRapido() {
     document.getElementById("compraDesc").value = desc;
     document.getElementById("compraValor").value = val.toString();
     document.getElementById("compraCategoria").value = cat;
+    // forma padrão débito para lançamento rápido
+    const formaEl = document.getElementById("compraForma");
+    if (formaEl) formaEl.value = "debito";
     adicionarCompra();
   }
 
