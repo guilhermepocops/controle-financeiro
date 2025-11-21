@@ -2,7 +2,7 @@ let extras = [];
 let compras = [];
 
 /* COLE AQUI SUA URL DO WEB APP DO APPS SCRIPT */
-const WEBAPP_URL = "https://projeto-controle-financeiro-b1ir.vercel.app/";
+const WEBAPP_URL = "https://controle-financeiro-gamma-beryl.vercel.app/api/sheets-proxy";
 
 function lerNumero(id) {
   const el = document.getElementById(id);
@@ -692,3 +692,4 @@ window.addEventListener("load", () => {
   mudarAba("resumo");
   atualizarEscurecimentoScroll();
 });
+
