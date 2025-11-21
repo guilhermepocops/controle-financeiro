@@ -470,3 +470,24 @@
   color: #a5a5a5;
   margin-left: 6px;
 }
+
+.compra-row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.compra-col {
+  flex: 1;
+  min-width: 0;
+}
+
+.compra-forma {
+  flex: 0 0 150px; /* largura fixa do select de forma de pagamento */
+}
+
+.compra-col label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 12px;
+}
