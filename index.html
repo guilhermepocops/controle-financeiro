@@ -45,10 +45,12 @@
 
     <!-- agora com 3 abas -->
     <div class="tabs-bar">
-      <button class="tab-btn active" data-tab="resumo" onclick="mudarAba('resumo')">Resumo</button>
-      <button class="tab-btn" data-tab="movimentos" onclick="mudarAba('movimentos')">Compras &amp; Rendas</button>
-      <button class="tab-btn" data-tab="fluxo" onclick="mudarAba('fluxo')">Fluxo de Caixa</button>
-    </div>
+  <button class="tab-btn active" data-tab="resumo" onclick="mudarAba('resumo')">Resumo</button>
+  <button class="tab-btn" data-tab="compras" onclick="mudarAba('compras')">Compras</button>
+  <button class="tab-btn" data-tab="rendas" onclick="mudarAba('rendas')">Rendas extras</button>
+  <button class="tab-btn" data-tab="fluxo" onclick="mudarAba('fluxo')">Fluxo de Caixa</button>
+</div>
+
 
     <!-- RESUMO -->
     <div id="tab-resumo" class="tab-panel active">
@@ -57,8 +59,27 @@
           <div class="grid">
 
             <!-- CARD VISÃO GERAL DO MÊS (não clicável) -->
+             <!-- CARD FATURA DO CARTÃO -->
+<div id="cardFatura" class="card card-emphasis">
+  <div class="badge">Fatura do cartão</div>
+
+  <div class="kpi-label">Valor da fatura do mês</div>
+  <div id="kpiFatura" class="kpi-value kpi-neg">R$ 0,00</div>
+
+  <div class="kpi-label" style="margin-top:8px;">
+    Vencimento: dia 11 · <span id="labelFaturaStatus"></span>
+  </div>
+  <div id="kpiFaturaCountdown" class="kpi-value kpi-neutral">—</div>
+
+  <div class="totais-mini">
+    Compras à vista (débito/dinheiro): <span id="miniComprasDebito">R$ 0,00</span>
+  </div>
+</div>
+
+
             <div id="cardVisao" class="card card-emphasis">
               <div class="badge">Visão geral do mês</div>
+
 
               <div class="kpi-label">Renda total (salários + rendas extras)</div>
               <div id="kpiRenda" class="kpi-value kpi-neutral">R$ 0,00</div>
@@ -132,10 +153,7 @@
                   <label>Luz (valor do mês)</label>
                   <input id="luz" type="number" step="0.01" value="57" />
                 </div>
-                <div>
-                  <label>Cartão de crédito (mês)</label>
-                  <input id="cartao" type="number" step="0.01" value="912.12" />
-                </div>
+                
               </div>
               <div class="row" style="margin-top:6px;">
                 <div>
@@ -156,90 +174,107 @@
     </div>
 
     <!-- MOVIMENTOS -->
-    <div id="tab-movimentos" class="tab-panel">
-      <div class="grid">
-        <div class="card">
-          <div class="badge">Rendas extras</div>
-          <div class="row">
-            <div>
-              <label>Descrição</label>
-              <input id="extraDesc" type="text" placeholder="Freela, venda, pix, etc." />
-            </div>
-            <div>
-              <label>Valor (R$)</label>
-              <input id="extraValor" type="number" step="0.01" />
-            </div>
-          </div>
-          <div style="margin-top:8px; display:flex; justify-content:flex-end;">
-            <button class="btn-main" onclick="adicionarExtra()">Adicionar renda extra</button>
-          </div>
-          <div class="totais-mini">
-            Total de rendas extras: <span id="totalExtras">R$ 0,00</span>
-          </div>
-          <div id="listaExtras" class="list"></div>
-        </div>
+    <!-- COMPRAS -->
+<div id="tab-compras" class="tab-panel">
+  <div class="grid">
+    <div class="card">
+      <div class="badge">Compras e gastos do dia a dia</div>
 
-        <div class="card">
-          <div class="badge">Compras e gastos do dia a dia</div>
-
-          <div class="row" style="margin-bottom:6px;">
-            <div>
-              <label>Filtrar por descrição</label>
-              <input
-                id="filtroCompraTexto"
-                type="text"
-                placeholder="Buscar (ex.: mercado, gasolina)"
-                oninput="renderCompras()"
-              />
-            </div>
-          </div>
-          <div class="row" style="margin-bottom:6px;">
-            <div>
-              <label>Filtrar por categoria</label>
-              <select id="filtroCompraCategoria" onchange="renderCompras()">
-                <option value="">Todas</option>
-                <option value="Mercado">Mercado</option>
-                <option value="Transporte">Transporte</option>
-                <option value="Lazer">Lazer</option>
-                <option value="Saúde">Saúde</option>
-                <option value="Outros">Outros</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="row">
-            <div>
-              <label>Descrição</label>
-              <input id="compraDesc" type="text" placeholder="Mercado, gasolina, lanche..." />
-            </div>
-          </div>
-          <div class="row" style="margin-top:6px;">
-            <div>
-              <label>Categoria</label>
-              <select id="compraCategoria">
-                <option value="Mercado">Mercado</option>
-                <option value="Transporte">Transporte</option>
-                <option value="Lazer">Lazer</option>
-                <option value="Saúde">Saúde</option>
-                <option value="Outros">Outros</option>
-              </select>
-            </div>
-            <div>
-              <label>Valor (R$)</label>
-              <input id="compraValor" type="number" step="0.01" />
-            </div>
-          </div>
-          <div style="margin-top:8px; display:flex; justify-content:flex-end;">
-            <button class="btn-main" onclick="adicionarCompra()">Adicionar compra</button>
-          </div>
-          <div class="totais-mini">
-            Total de compras (mês): <span id="totalCompras">R$ 0,00</span><br />
-            Total exibido no filtro: <span id="totalComprasFiltrado">R$ 0,00</span>
-          </div>
-          <div id="listaCompras" class="list"></div>
+      <div class="row" style="margin-bottom:6px;">
+        <div>
+          <label>Filtrar por descrição</label>
+          <input
+            id="filtroCompraTexto"
+            type="text"
+            placeholder="Buscar (ex.: mercado, gasolina)"
+            oninput="renderCompras()"
+          />
         </div>
       </div>
+      <div class="row" style="margin-bottom:6px;">
+        <div>
+          <label>Filtrar por categoria</label>
+          <select id="filtroCompraCategoria" onchange="renderCompras()">
+            <option value="">Todas</option>
+            <option value="Mercado">Mercado</option>
+            <option value="Transporte">Transporte</option>
+            <option value="Lazer">Lazer</option>
+            <option value="Saúde">Saúde</option>
+            <option value="Outros">Outros</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>Descrição</label>
+          <input id="compraDesc" type="text" placeholder="Mercado, gasolina, lanche..." />
+        </div>
+      </div>
+
+      <div class="row compra-row" style="margin-top:6px;">
+        <div class="compra-col">
+          <label>Categoria</label>
+          <select id="compraCategoria">
+            <option value="Mercado">Mercado</option>
+            <option value="Transporte">Transporte</option>
+            <option value="Lazer">Lazer</option>
+            <option value="Saúde">Saúde</option>
+            <option value="Outros">Outros</option>
+          </select>
+        </div>
+        <div class="compra-col">
+          <label>Valor (R$)</label>
+          <input id="compraValor" type="number" step="0.01" />
+        </div>
+        <div class="compra-col compra-forma">
+          <label for="compraForma">Forma de pagamento</label>
+          <select id="compraForma">
+            <option value="debito">Débito / Dinheiro</option>
+            <option value="credito">Crédito</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="margin-top:8px; display:flex; justify-content:flex-end;">
+        <button class="btn-main" onclick="adicionarCompra()">Adicionar compra</button>
+      </div>
+      <div class="totais-mini">
+        Total de compras (mês): <span id="totalCompras">R$ 0,00</span><br />
+        Total exibido no filtro: <span id="totalComprasFiltrado">R$ 0,00</span>
+      </div>
+      <div id="listaCompras" class="list"></div>
     </div>
+  </div>
+</div>
+
+<!-- RENDAS EXTRAS -->
+<div id="tab-rendas" class="tab-panel">
+  <div class="grid">
+    <div class="card">
+      <div class="badge">Rendas extras</div>
+      <div class="row">
+        <div>
+          <label>Descrição</label>
+          <input id="extraDesc" type="text" placeholder="Freela, venda, pix, etc." />
+        </div>
+        <div>
+          <label>Valor (R$)</label>
+          <input id="extraValor" type="number" step="0.01" />
+        </div>
+      </div>
+      <div style="margin-top:8px; display:flex; justify-content:flex-end;">
+        <button class="btn-main" onclick="adicionarExtra()">Adicionar renda extra</button>
+      </div>
+      <div class="totais-mini">
+        Total de rendas extras: <span id="totalExtras">R$ 0,00</span>
+      </div>
+      <div id="listaExtras" class="list"></div>
+    </div>
+  </div>
+</div>
+
+
 
     <!-- FLUXO DE CAIXA (nova aba) -->
     <div id="tab-fluxo" class="tab-panel">
@@ -298,6 +333,6 @@
   <button class="fab" onclick="toggleLancamentoRapido()">
     <span>+</span>
   </button>
+
 </body>
 </html>
-
